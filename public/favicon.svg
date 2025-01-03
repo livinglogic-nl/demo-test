@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="300">
+  <defs>
+    <rect id="block" transform-origin="center" transform="scale(0.9)" width="50" height="50" rx="10" ry="10" />
+  </defs>
+  <g fill="#459bd0">
+    <use href="#block" />
+  </g>
+  <g fill="#2A3F4F">
+    <use href="#block" y="50" />
+    <use href="#block" x="50" y="50" />
+  </g>
+</svg>
