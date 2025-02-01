@@ -1,0 +1,44 @@
+name: Run on main
+on:
+  push:
+    branches:
+      - main
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      AWS_DEFAULT_REGION: eu-central-1
+      AWS_DEFAULT_OUTPUT: json
+      PUB_TOPIC: arn:aws:sns:eu-central-1:590183978628:llim-github-log
+      PUB_NAME: ci-pipeline
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: report start
+        env:
+          RUNID: ${{ github.run_id }}
+        run: |
+          function pub() {
+            export SLOTID=$(cat src/creations.ts | head -1 | cut -d' ' -f3)
+            aws sns publish --topic-arn $PUB_TOPIC --message "{\"slotId\":\"$SLOTID\",\"name\":\"$PUB_NAME\",\"message\":\"$1\"}"
+          }
+          pub "[/demo-test/actions/runs/$RUNID]"
+      - name: install, build, test and deploy
+        run: |
+          export PATH=$PATH:~/.bun/bin
+          function pub() {
+            export SLOTID=$(cat src/creations.ts | head -1 | cut -d' ' -f3)
+            aws sns publish --topic-arn $PUB_TOPIC --message "{\"slotId\":\"$SLOTID\",\"name\":\"$PUB_NAME\",\"message\":\"$1\"}"
+          }
+          curl -fsSL https://bun.sh/install | bash
+          pub "bun downloaded"
+          bun install
+          pub "bun install complete"
+          bun run build
+          pub "bun build complete"
+          bun run test
+          pub "bun test complete"
+          aws s3 sync dist s3://llim-product --acl public-read
+          pub "sync to AWS S3 bucket complete [finish]"

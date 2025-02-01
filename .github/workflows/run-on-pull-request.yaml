@@ -1,0 +1,42 @@
+name: Run on pull request
+on:
+  pull_request:
+    branches: [main]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      AWS_DEFAULT_REGION: eu-central-1
+      AWS_DEFAULT_OUTPUT: json
+      PUB_TOPIC: arn:aws:sns:eu-central-1:590183978628:llim-github-log
+      PUB_NAME: pr-pipeline
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: report start
+        env:
+          RUNID: ${{ github.run_id }}
+        run: |
+          export SLOTID=$(cat src/creations.ts | head -1 | cut -d' ' -f3)
+          function pub() {
+            export SLOTID=$(cat src/creations.ts | head -1 | cut -d' ' -f3)
+            aws sns publish --topic-arn $PUB_TOPIC --message "{\"slotId\":\"$SLOTID\",\"name\":\"$PUB_NAME\",\"message\":\"$1\"}"
+          }
+          pub "[/demo-test/actions/runs/$RUNID]"
+      - name: install, build and test
+        run: |
+          export PATH=$PATH:~/.bun/bin
+          function pub() {
+            export SLOTID=$(cat src/creations.ts | head -1 | cut -d' ' -f3)
+            aws sns publish --topic-arn $PUB_TOPIC --message "{\"slotId\":\"$SLOTID\",\"name\":\"$PUB_NAME\",\"message\":\"$1\"}"
+          }
+          curl -fsSL https://bun.sh/install | bash
+          pub "bun downloaded"
+          bun install
+          pub "bun install complete"
+          bun run build
+          pub "bun build complete"
+          bun run test
+          pub "pipeline complete [approve-pr]"
